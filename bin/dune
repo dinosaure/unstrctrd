@@ -1,0 +1,6 @@
+(executable
+ (name unstrctrd)
+ (modules unstrctrd lexer)
+ (libraries fmt))
+
+(ocamllex lexer)
