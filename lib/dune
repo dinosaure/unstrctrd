@@ -1,0 +1,6 @@
+(library
+ (name unstrctrd)
+ (modules unstrctrd pp lexer)
+ (libraries fmt uutf))
+
+(ocamllex lexer)

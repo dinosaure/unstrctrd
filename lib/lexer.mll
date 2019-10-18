@@ -6,7 +6,7 @@ module type MONAD = sig
   val return : 'a -> 'a t
   val bind : 'a t -> ('a -> 'b t) -> 'b t
   val fail : string -> 'a t
-  val read : buffer -> int -> int t
+  val read : (int -> 'a t) -> buffer -> int -> 'a t
 end
 
 module type BUFFER = sig
@@ -16,15 +16,6 @@ module type BUFFER = sig
   val blit_to_bytes : t -> int -> bytes -> int -> int -> unit
   val buf : t
 end
-
-let trim_lf_cr s =
-  let res = Bytes.create (String.length s) in
-  let p = ref 0 in
-  for i = 0 to String.length s - 1 do
-    match s.[i] with
-    | '\r' | '\n' -> ()
-    | chr -> Bytes.set res !p chr ; incr p
-  done ; Bytes.sub_string res 0 !p
 
 let unlex buf n =
   let open Lexing in
@@ -64,37 +55,33 @@ module Make (Buffer : BUFFER) (Monad : MONAD with type buffer = Buffer.t) = stru
   ;;
 
   let on_refill lexbuf =
-    Monad.bind (Monad.read Buffer.buf (Buffer.length Buffer.buf))
-      (fun len -> fill_lexbuf Buffer.buf len lexbuf ; Monad.return ())
+    let k len = fill_lexbuf Buffer.buf len lexbuf ; Monad.return () in
+    Monad.read k Buffer.buf (Buffer.length Buffer.buf)
 
   let refill_handler k lexbuf =
     Monad.bind (on_refill lexbuf) (fun () -> k lexbuf)
 
   let zero_pos =
-  let open Lexing in
-  {
-    pos_fname = "";
-    pos_lnum = 1;
-    pos_bol = 0;
-    pos_cnum = 0;
-  }
+    let open Lexing in
+    { pos_fname = ""
+    ; pos_lnum = 1
+    ; pos_bol = 0
+    ; pos_cnum = 0 }
 
   let make () =
-  let open Lexing in
-  {
-    refill_buff = (fun _lexbuf -> ());
-    lex_buffer = Bytes.create 1024;
-    lex_buffer_len = 0;
-    lex_abs_pos = 0;
-    lex_start_pos = 0;
-    lex_curr_pos = 0;
-    lex_last_pos = 0;
-    lex_last_action = 0;
-    lex_mem = [||];
-    lex_eof_reached = false;
-    lex_start_p = zero_pos;
-    lex_curr_p = zero_pos;
-  }
+    let open Lexing in
+    { refill_buff = (fun _lexbuf -> ())
+    ; lex_buffer = Bytes.create 1024
+    ; lex_buffer_len = 0
+    ; lex_abs_pos = 0
+    ; lex_start_pos = 0
+    ; lex_curr_pos = 0
+    ; lex_last_pos = 0
+    ; lex_last_action = 0
+    ; lex_mem = [||]
+    ; lex_eof_reached = false
+    ; lex_start_p = zero_pos
+    ; lex_curr_p = zero_pos }
 }
 
 let wsp = [ ' ' '\t' ]
@@ -125,18 +112,40 @@ let fws = wsp* crlf wsp+ | wsp+
 refill {refill_handler}
 
 rule obs_unstruct acc = parse
-  | lf* cr* crlf eof { Monad.return (List.rev acc) }
-  | lf* cr* crlf not_wsp { unlex lexbuf 1 ; Monad.return (List.rev acc) }
+  | (lf* as lf0) (cr* as cr0) crlf eof
+    { let lf0 = String.length lf0 in
+      let cr0 = String.length cr0 in
+      Monad.return (List.rev (`OBS_UTEXT (lf0, cr0, "") :: acc)) }
+  | (lf* as lf0) (cr* as cr0) crlf not_wsp
+    { unlex lexbuf 1 ;
+      let lf0 = String.length lf0 in
+      let cr0 = String.length cr0 in
+      Monad.return (List.rev (`OBS_UTEXT (lf0, cr0, "") :: acc)) }
 
 (* ( *LF *CR *(obs-utext *LF *CR) ) *)
 
-  | lf* cr* ( obs_utext+ as x) crlf eof { Monad.return (List.rev (`OBS_UTEXT (trim_lf_cr x) :: acc)) }
-  | lf* cr* ( obs_utext+ as x) crlf not_wsp { unlex lexbuf 1 ; Monad.return (List.rev (`OBS_UTEXT (trim_lf_cr x) :: acc)) }
-  | lf* cr* (( obs_utext lf* cr*)+ as x) not_lf { unlex lexbuf 1 ; obs_unstruct (`OBS_UTEXT (trim_lf_cr x) :: acc) lexbuf }
+  | (lf* as lf0) (cr* as cr0) (obs_utext+ as x) crlf eof
+    { let lf0 = String.length lf0 in
+      let cr0 = String.length cr0 in
+      Monad.return (List.rev (`OBS_UTEXT (lf0, cr0, x) :: acc)) }
+  | (lf* as lf0) (cr* as cr0) ( obs_utext+ as x) crlf not_wsp
+    { unlex lexbuf 1 ;
+      let lf0 = String.length lf0 in
+      let cr0 = String.length cr0 in
+      Monad.return (List.rev (`OBS_UTEXT (lf0, cr0, x) :: acc)) }
+  | (lf* as lf0) (cr* as cr0) ((obs_utext lf* cr*)+ as x) not_lf
+    { unlex lexbuf 1 ;
+      let lf0 = String.length lf0 in
+      let cr0 = String.length cr0 in
+      obs_unstruct (`OBS_UTEXT (lf0, cr0, x) :: acc) lexbuf }
+
+  | lf+ as lf { obs_unstruct (`OBS_UTEXT (String.length lf, 0, "") :: acc) lexbuf }
+  | cr+ as cr not_lf { unlex lexbuf 1 ; obs_unstruct (`OBS_UTEXT (0, String.length cr, "") :: acc) lexbuf }
 
 (* / FWS *)
 
   | fws as fws { obs_unstruct (`FWS fws :: acc) lexbuf }
+  | _ { Monad.fail "Non-terminating unstructured form" }
 
 and unstructured acc = parse
   | crlf eof { Monad.return (List.rev acc) }
@@ -146,11 +155,13 @@ and unstructured acc = parse
 
   | fws as fws { unstructured (`FWS fws :: acc) lexbuf }
   | vchar+ as x { unstructured (`VCHAR x :: acc) lexbuf }
-  | wsp+ as wsp { unstructured (`WSP wsp :: acc) lexbuf } (* not sure! *)
+  | wsp+ as wsp { unstructured (`WSP wsp :: acc) lexbuf } (* XXX(dinosaure): not sure! *)
 
 (* / obs-unstruct *)
 
-  | _ { obs_unstruct acc lexbuf }
+  | cr { obs_unstruct (`OBS_UTEXT (0, 1, "") :: acc) lexbuf }
+  | lf { obs_unstruct (`OBS_UTEXT (1, 0, "") :: acc) lexbuf }
+  | obs_utext+ as obs_utext { obs_unstruct (`OBS_UTEXT (0, 0, obs_utext) :: acc) lexbuf }
 
 {
 end
