@@ -15,7 +15,7 @@ let error_msgf fmt = Fmt.kstrf (fun err -> Error (`Msg err)) fmt
 let of_string str =
   let module B = struct
     type t = bytes
-    
+
     let length = Bytes.length
     let blit_to_bytes = Bytes.blit
     let buf = Bytes.create 4096
@@ -67,3 +67,14 @@ let to_utf_8_string lst =
     | `CR -> Buffer.add_char buf '\r' in
   List.iter iter lst ; Buffer.contents buf
 
+let without_comments lst =
+  let rec go stack acc = function
+    | [] -> if stack = 0 then Ok (List.rev acc) else error_msgf "Non-terminating comment"
+    | `Uchar uchar as value :: r ->
+      ( match Uchar.to_int uchar with
+        | 0x28 (* '(' *) -> go (succ stack) acc r
+        | 0x29 (* ')' *) -> go (pred stack) acc r
+        | _ -> if stack > 0 then go stack acc r else go stack (value :: acc) r )
+    | value :: r ->
+      if stack > 0 then go stack acc r else go stack (value :: acc) r in
+  go 0 [] lst

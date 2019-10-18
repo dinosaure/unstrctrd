@@ -6,6 +6,15 @@ let valid_unstructured_string input expect =
   let res = let open Rresult.R in Unstrctrd.of_string input >>| fun (_, t) -> Unstrctrd.to_utf_8_string t in
   Alcotest.(check (result str errored)) "expect" res (Ok expect)
 
+let valid_unstructured_string_without_comment input expect =
+  Alcotest.test_case (Fmt.strf "%S" expect) `Quick @@ fun () ->
+  let res =
+    let open Rresult.R in
+    Unstrctrd.of_string input
+    >>= fun (_, t) -> Unstrctrd.without_comments t
+    >>| Unstrctrd.to_utf_8_string in
+  Alcotest.(check (result str errored)) "expect" res (Ok expect)
+
 let () =
   Alcotest.run "unstrctrd"
     [ "valid", [ valid_unstructured_string "Hello\r\n" "Hello"
@@ -23,4 +32,8 @@ let () =
                ; valid_unstructured_string "\n\r\n" "\n"
                ; valid_unstructured_string "\n\n\r\n" "\n\n"
                ; valid_unstructured_string "\n\n\r\n \r\n" "\n\n\r\n "
-               ; valid_unstructured_string "\n\r\n Hello\r\n World\r\n !\r\n" "\n\r\n Hello\r\n World\r\n !"] ]
+               ; valid_unstructured_string "\n\r\n Hello\r\n World\r\n !\r\n" "\n\r\n Hello\r\n World\r\n !" ]
+    ; "comments", [ valid_unstructured_string_without_comment "Hello(World)\r\n" "Hello"
+                  ; valid_unstructured_string_without_comment "Hello (a\r\n b)World!\r\n" "Hello World!"
+                  ; valid_unstructured_string_without_comment "(a\r\n (b \r\n c))\r\n" ""
+                  ; valid_unstructured_string_without_comment "(a)(b)Hello(c)\r\n" "Hello" ] ]
