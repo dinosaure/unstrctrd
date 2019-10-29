@@ -21,7 +21,7 @@ let cut ~sep s =
 let pp_fws k (`FWS fws) =
   match cut ~sep:"\r\n" fws with
   | None -> k [ `WSP fws ]
-  | Some ("", "") -> k [ `CRLF ]
+  | Some ("", "") -> assert false (* k [ `CRLF ] *)
   | Some ("", wsp) -> k [ `FWS wsp ]
   | Some (wsp0, wsp1) -> k [ `WSP wsp0; `FWS wsp1 ]
 

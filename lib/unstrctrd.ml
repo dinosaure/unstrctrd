@@ -1,16 +1,21 @@
 type elt =
   [ `Uchar of Uchar.t
-  | `WSP of string
-  | `LF of int
-  | `CR of int
-  | `FWS of string
-  | `CRLF
+  | `WSP of wsp 
+  | `LF
+  | `CR
+  | `FWS of wsp
   | `d0
-  | `OBS_NO_WS_CTL of char ]
+  | `OBS_NO_WS_CTL of obs ]
+and wsp = string
+and obs = char
 
 type t = elt list
 
+type error = [ `Msg of string ]
+
 let error_msgf fmt = Fmt.kstrf (fun err -> Error (`Msg err)) fmt
+
+let empty = []
 
 let of_string str =
   let module B = struct
@@ -78,3 +83,54 @@ let without_comments lst =
     | value :: r ->
       if stack > 0 then go stack acc r else go stack (value :: acc) r in
   go 0 [] lst
+
+let iter ~f l = List.iter f l
+let fold ~f a l = List.fold_left f a l
+let map ~f l = List.map f l
+
+let wsp ~len = `WSP (String.make len ' ')
+let tab ~len = `WSP (String.make len '\t')
+
+let fws ?(tab = false) indent =
+  if indent <= 0 then Fmt.invalid_arg "fws: invalid indent argument" ;
+  if tab then `FWS (String.make indent '\t') else `FWS (String.make indent ' ')
+
+let split_at ~index l =
+  if index < 0 || index > List.length l then Fmt.invalid_arg "split_at: index (%d) is invalid" index ;
+
+  let rec go n l r = match n with
+    | 0 -> List.rev l, r
+    | n -> match r with
+      | [] -> assert false | x :: r -> go (pred n) (x :: l) r in
+  go index [] l
+
+let split_on ~on l =
+  let rec go l r = match r, on with
+    | [], _ -> List.rev l, []
+    | `CR    :: r, `CR
+    | `LF    :: r, `LF
+    | `WSP _ :: r, `WSP
+    | `FWS _ :: r, `FWS
+    | `d0    :: r, `Char '\000' ->
+      List.rev l, r
+    | `Uchar a :: r, `Uchar b
+      when Uchar.equal a b ->
+      List.rev l, r
+    | `Uchar a :: r, `Char b
+      when Uchar.equal a (Uchar.of_char b) ->
+      List.rev l, r
+    | `OBS_NO_WS_CTL a :: r, `Char b
+      when Char.equal a b ->
+      List.rev l, r
+    | x :: r, _ -> go (x :: l) r in
+  go [] l
+
+let of_list l =
+  let has_cr = ref false in
+  let exception Break in
+  let f = function
+    | `LF -> if !has_cr then raise_notrace Break ; has_cr := false
+    | `CR -> has_cr := true
+    | _   -> has_cr := false in
+  try List.iter f l ; Ok l
+  with Break -> error_msgf "of_list: An unexpected CRLF token exists"
