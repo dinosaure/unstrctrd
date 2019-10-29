@@ -16,6 +16,7 @@ type error = [ `Msg of string ]
 let error_msgf fmt = Fmt.kstrf (fun err -> Error (`Msg err)) fmt
 
 let empty = []
+let length = List.length
 
 let of_string str =
   let module B = struct
@@ -106,22 +107,22 @@ let split_at ~index l =
 
 let split_on ~on l =
   let rec go l r = match r, on with
-    | [], _ -> List.rev l, []
+    | [], _ -> None
     | `CR    :: r, `CR
     | `LF    :: r, `LF
     | `WSP _ :: r, `WSP
     | `FWS _ :: r, `FWS
     | `d0    :: r, `Char '\000' ->
-      List.rev l, r
+      Some (List.rev l, r)
     | `Uchar a :: r, `Uchar b
       when Uchar.equal a b ->
-      List.rev l, r
+      Some (List.rev l, r)
     | `Uchar a :: r, `Char b
       when Uchar.equal a (Uchar.of_char b) ->
-      List.rev l, r
+      Some (List.rev l, r)
     | `OBS_NO_WS_CTL a :: r, `Char b
       when Char.equal a b ->
-      List.rev l, r
+      Some (List.rev l, r)
     | x :: r, _ -> go (x :: l) r in
   go [] l
 
@@ -134,3 +135,15 @@ let of_list l =
     | _   -> has_cr := false in
   try List.iter f l ; Ok l
   with Break -> error_msgf "of_list: An unexpected CRLF token exists"
+
+let fold_fws t =
+  let folder (fws, acc) = function
+    | `FWS wsp -> if fws then (fws, acc) else (true, `WSP wsp :: acc)
+    | x -> (false, x :: acc) in
+  List.fold_left folder (false, []) t |> fun (_, t) -> List.rev t
+
+module type BUFFER = Lexer.BUFFER
+module type MONAD = Lexer.MONAD
+module Make = Lexer.Make
+
+let post_process = Pp.pp

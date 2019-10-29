@@ -25,14 +25,15 @@ let split_at input index (e0, e1) =
     >>| (fun (a, b) -> Unstrctrd.(to_utf_8_string a, to_utf_8_string b)) in
   Alcotest.(check (result (pair str str) errored)) "expect" res (Ok (e0, e1))
 
-let split_on input v (e0, e1) =
-  Alcotest.test_case (Fmt.strf "@[<1>(%S,@ %S)@]" e0 e1) `Quick @@ fun () ->
+let split_on input v expect =
+  Alcotest.test_case (Fmt.strf "%S" input) `Quick @@ fun () ->
   let res =
     let open Rresult.R in
     Unstrctrd.of_string input
     >>| (fun (_, t) -> Unstrctrd.split_on ~on:v t)
-    >>| (fun (a, b) -> Unstrctrd.(to_utf_8_string a, to_utf_8_string b)) in
-  Alcotest.(check (result (pair str str) errored)) "expect" res (Ok (e0, e1))
+    >>| (function Some (a, b) -> Some Unstrctrd.(to_utf_8_string a, to_utf_8_string b)
+                | None -> None) in
+  Alcotest.(check (result (option (pair str str)) errored)) "expect" res (Ok expect)
 
 let complex_0 =
 {|To:A Group(Some people)
@@ -95,6 +96,7 @@ let () =
     ; "split_at", [ split_at "\r\n" 0 ("", "")
                   ; split_at "Hello\r\n" 0 ("", "Hello")
                   ; split_at "Hello\r\n World!\r\n" 5 ("Hello", "\r\n World!") ]
-    ; "split_on", [ split_on "\r\n" `FWS ("", "")
-                  ; split_on "Hello\r\n" `FWS ("Hello", "")
-                  ; split_on "Hello\r\n World!\r\n" `FWS ("Hello", "World!") ] ]
+    ; "split_on", [ split_on "\r\n" `FWS None
+                  ; split_on "Hello\r\n" `FWS None
+                  ; split_on "Hello\r\n World!\r\n" `FWS (Some ("Hello", "World!"))
+                  ; split_on "Hello World!\r\n" `WSP (Some ("Hello", "World!")) ] ]
