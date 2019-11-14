@@ -1,6 +1,6 @@
 type elt =
   [ `Uchar of Uchar.t
-  | `WSP of wsp 
+  | `WSP of wsp
   | `LF
   | `CR
   | `FWS of wsp
@@ -22,13 +22,12 @@ let of_string str =
   let module B = struct
     type t = bytes
 
-    let length = Bytes.length
     let blit_to_bytes = Bytes.blit
     let buf = Bytes.create 4096
   end in
   let module M = struct
     type 'a t =
-      | Read of { buffer : Bytes.t; length : int; continue : int -> 'a t }
+      | Read of { buffer : Bytes.t; continue : int -> 'a t }
       | Fail of string
       | Done of 'a
 
@@ -37,14 +36,14 @@ let of_string str =
     let return x = Done x
 
     let rec bind : 'a t -> ('a -> 'b t) -> 'b t = fun x f -> match x with
-      | Read { buffer; length; continue; } ->
+      | Read { buffer; continue; } ->
         let continue len = bind (continue len) f in
-        Read { buffer; length; continue; }
+        Read { buffer; continue; }
       | Fail err -> Fail err
       | Done x -> f x
 
     let fail err = Fail err
-    let read k buf len = Read { buffer= buf; length= len; continue= k; }
+    let read k buf = Read { buffer= buf; continue= k; }
   end in
   let module Lexer = Lexer.Make(B)(M) in
   let lexbuf = Lexer.make () in
@@ -54,8 +53,8 @@ let of_string str =
       let k res = Ok (lexbuf.Lexing.lex_abs_pos + lexbuf.Lexing.lex_curr_pos, res) in
       Pp.pp k lst
     | M.Fail err -> Error (`Msg err)
-    | M.Read { buffer; length; continue; } ->
-      let len = min (String.length str - !pos) length in
+    | M.Read { buffer; continue; } ->
+      let len = min (String.length str - !pos) (Bytes.length buffer) in
       Bytes.blit_string str !pos buffer 0 len ; pos := !pos + len ;
       go (continue len) in
   go (Lexer.unstructured [] lexbuf)

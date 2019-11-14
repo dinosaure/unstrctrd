@@ -4,4 +4,10 @@
  (modules unstrctrd pp lexer)
  (libraries fmt uutf))
 
+(library
+ (name unstrctrd_parser)
+ (public_name unstrctrd.parser)
+ (modules unstrctrd_parser)
+ (libraries angstrom unstrctrd))
+
 (ocamllex lexer)

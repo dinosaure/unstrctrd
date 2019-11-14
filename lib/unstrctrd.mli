@@ -83,13 +83,12 @@ module type MONAD = sig
   val return : 'a -> 'a t
   val bind : 'a t -> ('a -> 'b t) -> 'b t
   val fail : string -> 'a t
-  val read : (int -> 'a t) -> buffer -> int -> 'a t
+  val read : (int -> 'a t) -> buffer -> 'a t
 end
 
 module type BUFFER = sig
   type t
 
-  val length : t -> int
   val blit_to_bytes : t -> int -> bytes -> int -> int -> unit
   val buf : t
 end

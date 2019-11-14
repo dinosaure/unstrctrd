@@ -6,13 +6,12 @@ module type MONAD = sig
   val return : 'a -> 'a t
   val bind : 'a t -> ('a -> 'b t) -> 'b t
   val fail : string -> 'a t
-  val read : (int -> 'a t) -> buffer -> int -> 'a t
+  val read : (int -> 'a t) -> buffer -> 'a t
 end
 
 module type BUFFER = sig
   type t
 
-  val length : t -> int
   val blit_to_bytes : t -> int -> bytes -> int -> int -> unit
   val buf : t
 end
@@ -56,7 +55,7 @@ module Make (Buffer : BUFFER) (Monad : MONAD with type buffer = Buffer.t) = stru
 
   let on_refill lexbuf =
     let k len = fill_lexbuf Buffer.buf len lexbuf ; Monad.return () in
-    Monad.read k Buffer.buf (Buffer.length Buffer.buf)
+    Monad.read k Buffer.buf
 
   let refill_handler k lexbuf =
     Monad.bind (on_refill lexbuf) (fun () -> k lexbuf)
