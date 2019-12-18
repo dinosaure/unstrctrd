@@ -25,6 +25,28 @@ let unlex buf n =
   then buf.lex_curr_p <- { buf.lex_start_p with pos_cnum = buf.lex_abs_pos + buf.lex_curr_pos }
 ;;
 
+let zero_pos =
+  let open Lexing in
+  { pos_fname = ""
+  ; pos_lnum = 1
+  ; pos_bol = 0
+  ; pos_cnum = 0 }
+
+let make () =
+  let open Lexing in
+  { refill_buff = (fun _lexbuf -> ())
+  ; lex_buffer = Bytes.create 1024
+  ; lex_buffer_len = 0
+  ; lex_abs_pos = 0
+  ; lex_start_pos = 0
+  ; lex_curr_pos = 0
+  ; lex_last_pos = 0
+  ; lex_last_action = 0
+  ; lex_mem = [||]
+  ; lex_eof_reached = false
+  ; lex_start_p = zero_pos
+  ; lex_curr_p = zero_pos }
+
 module Make (Buffer : BUFFER) (Monad : MONAD with type buffer = Buffer.t) = struct
   let fill_lexbuf buf len lexbuf =
     let open Lexing in
@@ -60,27 +82,7 @@ module Make (Buffer : BUFFER) (Monad : MONAD with type buffer = Buffer.t) = stru
   let refill_handler k lexbuf =
     Monad.bind (on_refill lexbuf) (fun () -> k lexbuf)
 
-  let zero_pos =
-    let open Lexing in
-    { pos_fname = ""
-    ; pos_lnum = 1
-    ; pos_bol = 0
-    ; pos_cnum = 0 }
-
-  let make () =
-    let open Lexing in
-    { refill_buff = (fun _lexbuf -> ())
-    ; lex_buffer = Bytes.create 1024
-    ; lex_buffer_len = 0
-    ; lex_abs_pos = 0
-    ; lex_start_pos = 0
-    ; lex_curr_pos = 0
-    ; lex_last_pos = 0
-    ; lex_last_action = 0
-    ; lex_mem = [||]
-    ; lex_eof_reached = false
-    ; lex_start_p = zero_pos
-    ; lex_curr_p = zero_pos }
+  let make = make
 }
 
 let wsp = [ ' ' '\t' ]
