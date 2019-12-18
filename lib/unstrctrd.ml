@@ -45,8 +45,8 @@ let of_string str =
     let fail err = Fail err
     let read k buf = Read { buffer= buf; continue= k; }
   end in
-  let module Lexer = Lexer.Make(B)(M) in
   let lexbuf = Lexer.make () in
+  let module Lexer = Lexer.Make(B)(M) in
   let pos = ref 0 in
   let rec go = function
     | M.Done lst ->
@@ -145,4 +145,5 @@ module type BUFFER = Lexer.BUFFER
 module type MONAD = Lexer.MONAD
 module Make = Lexer.Make
 
+let lexbuf_make = Lexer.make
 let post_process = Pp.pp
