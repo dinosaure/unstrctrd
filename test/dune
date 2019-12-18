@@ -1,6 +1,12 @@
 (executable
  (name test)
+ (modules test)
  (libraries alcotest rresult unstrctrd))
+
+(executable
+ (name test_angstorm)
+ (modules test_angstorm)
+ (libraries alcotest rresult unstrctrd.parser))
 
 (alias
  (name runtest)
