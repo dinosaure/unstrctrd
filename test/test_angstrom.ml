@@ -23,7 +23,7 @@ let valid_unstructured_flow input expect =
         Bigstringaf.blit_from_string x ~src_off:0 buffer ~dst_off:len ~len:(String.length x) ;
         go (len + String.length x) r (continue buffer ~off:0 ~len:(len + String.length x) Incomplete) in
   let buf = Bytes.create 0x1000 in
-  let res = go 0 input (Angstrom.Unbuffered.parse (Unstrctrd_parser.fast_unstrctrd buf)) in
+  let res = go 0 input (Angstrom.Unbuffered.parse (Unstrctrd_parser.unstrctrd buf)) in
   match res with
   | Ok (v, rest) ->
     let res = Unstrctrd.to_utf_8_string v in
@@ -49,7 +49,7 @@ let invalid_unstructured_flow input =
         Bigstringaf.blit_from_string x ~src_off:0 buffer ~dst_off:len ~len:(String.length x) ;
         go (len + String.length x) r (continue buffer ~off:0 ~len:(len + String.length x) Incomplete) in
   let buf = Bytes.create 0x1000 in
-  let res = go 0 input (Angstrom.Unbuffered.parse (Unstrctrd_parser.fast_unstrctrd buf)) in
+  let res = go 0 input (Angstrom.Unbuffered.parse (Unstrctrd_parser.unstrctrd buf)) in
   match res with
   | Ok (v, rest) -> Alcotest.failf "Unexpected result: %S and %S" (Unstrctrd.to_utf_8_string v) rest
   | Error _ -> ()
@@ -61,7 +61,7 @@ let parser =
   take_while is_ftext >>= fun field_name ->
   Fmt.epr ">>> Start to recognize value of %S\n%!" field_name ;
   let buf = Bytes.create 0x7f in
-  skip_while is_wsp *> char ':' *> Unstrctrd_parser.fast_unstrctrd buf >>= fun v ->
+  skip_while is_wsp *> char ':' *> Unstrctrd_parser.unstrctrd buf >>= fun v ->
   let res =
     let open Rresult in
     Unstrctrd.without_comments v >>| Unstrctrd.fold_fws >>| Unstrctrd.to_utf_8_string in
