@@ -46,19 +46,31 @@ let unstrctrd buf =
 let read
   : Lexing.lexbuf -> (int -> 'a Angstrom.t) -> bytes -> 'a Angstrom.t
   = fun lexbuf continue buffer ->
-  let open Angstrom in
-  pos >>= fun curr_pos ->
-  advance (lexbuf.Lexing.lex_curr_pos - curr_pos) *> commit >>= fun () ->
-  fix @@ fun m -> available >>= function
-  | 0 ->
-    ( peek_char >>= function
-      | Some _ -> m
-      | None -> try continue 0 with Failure _ -> fail "Invalid unstructured form" )
-  | n ->
-    peek_string n >>= fun input ->
-    let len = min n (Bytes.length buffer) in
-    Bytes.blit_string input 0 buffer 0 len ;
-    continue len
+    let open Angstrom in
+    fix @@ fun m0 ->
+    pos >>= fun curr_pos0 ->
+    let curr_pos0 = curr_pos0 - lexbuf.Lexing.lex_abs_pos in
+    fix @@ fun m1 ->
+    pos >>= fun curr_pos1 ->
+    let curr_pos1 = curr_pos1 - lexbuf.Lexing.lex_abs_pos in
+
+    if curr_pos1 - curr_pos0 > 0
+    then ( peek_char >>= function
+           | Some _ -> commit *> m0
+           | None -> ( try continue 0 with _ -> fail "Invalid structured form" ) )
+    else ( available >>= fun len ->
+           let saved = lexbuf.Lexing.lex_curr_pos - curr_pos0 in
+
+           match len - saved with
+           | 0 ->
+             ( peek_char >>= function
+                 | Some _ -> ((advance len *> m1) <|> m0)
+                 | None -> ( try continue 0 with _ -> fail "Invalid structured form" ) )
+           | rest ->
+             peek_string len >>= fun src ->
+             let len = min rest (Bytes.length buffer) in
+             Bytes.blit_string src saved buffer 0 len ;
+             ((continue len) <|> m1) )
 
 let fast_unstrctrd buf =
   let lexbuf = Unstrctrd.lexbuf_make () in
@@ -82,6 +94,9 @@ let fast_unstrctrd buf =
   let open Angstrom in
   let trailer v =
     pos >>= fun curr_pos ->
-    advance (lexbuf.Lexing.lex_curr_pos - curr_pos) *> return v in
+    let n = max lexbuf.Lexing.lex_curr_pos 0 in
+    ( if curr_pos <> n then advance n else return () ) *> return v in
 
+  pos >>= fun lex_abs_pos ->
+  lexbuf.Lexing.lex_abs_pos <- lex_abs_pos ;
   State.unstructured [] lexbuf >>= trailer >>= Unstrctrd.post_process return

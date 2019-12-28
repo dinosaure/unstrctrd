@@ -73,16 +73,38 @@ let to_utf_8_string lst =
   List.iter iter lst ; Buffer.contents buf
 
 let without_comments lst =
-  let rec go stack acc = function
+  let rec go stack escaped acc = function
     | [] -> if stack = 0 then Ok (List.rev acc) else error_msgf "Non-terminating comment"
     | `Uchar uchar as value :: r ->
       ( match Uchar.to_int uchar with
-        | 0x28 (* '(' *) -> go (succ stack) acc r
-        | 0x29 (* ')' *) -> go (pred stack) acc r
-        | _ -> if stack > 0 then go stack acc r else go stack (value :: acc) r )
+        | 0x28 (* '(' *) ->
+          if not escaped
+          then go (succ stack) false acc r
+          else
+            ( if stack > 0
+              then go stack false acc r
+              else go stack false (value :: acc) r )
+        | 0x29 (* ')' *) ->
+          if not escaped
+          then go (pred stack) false acc r
+          else
+            ( if stack > 0
+              then go stack false acc r
+              else go stack false (value :: acc) r )
+        | 0x5c (* '\' *) ->
+          if not escaped
+          then go stack true acc r
+          else
+            ( if stack > 0
+              then go stack false acc r
+              else go stack false (value :: acc) r )
+        | _ ->
+          if stack > 0
+          then go stack false acc r
+          else go stack false (value :: acc) r )
     | value :: r ->
-      if stack > 0 then go stack acc r else go stack (value :: acc) r in
-  go 0 [] lst
+      if stack > 0 then go stack false acc r else go stack false (value :: acc) r in
+  go 0 false [] lst
 
 let iter ~f l = List.iter f l
 let fold ~f a l = List.fold_left f a l
