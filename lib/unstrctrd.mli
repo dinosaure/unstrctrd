@@ -104,4 +104,5 @@ sig
     Lexing.lexbuf -> 'a list Monad.t
 end
 
+val lexbuf_make : unit -> Lexing.lexbuf
 val post_process : (t -> 'a) -> [ `FWS of string | `OBS_UTEXT of int * int * string | `VCHAR of string | `WSP of string ] list -> 'a
