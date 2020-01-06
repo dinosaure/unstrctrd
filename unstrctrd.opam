@@ -19,7 +19,10 @@ depends: [
   "dune"
   "uutf"
   "fmt"
-  "rresult"  {with-test}
-  "alcotest" {with-test}
+  "rresult"     {with-test}
+  "alcotest"    {with-test}
+  "ke"          {with-test}
+  "bigstringaf" {with-test}
+  "hxd"         {with-test}
   "angstrom" {>= "0.11.0"}
 ]
