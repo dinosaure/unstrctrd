@@ -6,7 +6,7 @@
 (executable
  (name test_angstrom)
  (modules test_angstrom)
- (libraries alcotest rresult unstrctrd.parser))
+ (libraries alcotest rresult unstrctrd.parser hxd.string bigstringaf ke))
 
 (alias
  (name runtest)

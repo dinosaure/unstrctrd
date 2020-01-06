@@ -49,8 +49,10 @@ let unstrctrd buf =
   let open Angstrom in
   let trailer v =
     pos >>= fun curr_pos ->
-    let n = max lexbuf.Lexing.lex_curr_pos 0 in
-    ( if curr_pos <> n then advance n else return () ) *> return v in
+    available >>= fun available ->
+    let curr_pos = curr_pos - lexbuf.Lexing.lex_abs_pos in
+    let saved = lexbuf.Lexing.lex_curr_pos - curr_pos in
+    ( if saved <= available then advance saved else return () ) *> return v in
 
   pos >>= fun lex_abs_pos ->
   lexbuf.Lexing.lex_abs_pos <- lex_abs_pos ;
