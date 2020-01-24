@@ -8,21 +8,21 @@ dev-repo:     "git+https://github.com/dinosaure/unstrctrd.git"
 doc:          "https://dinosaure.github.io/unstrctrd/"
 license:      "MIT"
 synopsis:     "Unstructured parser"
-description: """Fast and compliant Unstructured parser
+description: """Fast and compliant Unstructured parser according RFC 822
 """
 
 build: [ "dune" "build" "-p" name "-j" jobs ]
 run-test: [ "dune" "runtest" "-p" name "-j" jobs ]
 
 depends: [
-  "ocaml"      {>= "4.07.0"}
+  "ocaml"       {>= "4.07.0"}
   "dune"
   "uutf"
   "fmt"
+  "angstrom"    {>= "0.11.0"}
   "rresult"     {with-test}
   "alcotest"    {with-test}
   "ke"          {with-test}
   "bigstringaf" {with-test}
   "hxd"         {with-test}
-  "angstrom" {>= "0.11.0"}
 ]
