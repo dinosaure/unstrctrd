@@ -48,3 +48,7 @@ terminating token)
 `unstrctrd.parser` provides an [angstrom][angstrom] parser which can be safely
 composed with others `angstrom` parsers. It requires the allocation of an
 internal buffer used by `ocamllex` and ensure the safety.
+
+[deb]: https://fr.wikipedia.org/wiki/Deb
+[emile]: https://github.com/dinosaure/emile.git
+[angstrom]: https://github.com/inhabitedtype/angstrom.git
