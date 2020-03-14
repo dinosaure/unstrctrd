@@ -48,6 +48,8 @@ let make () =
   ; lex_curr_p = zero_pos }
 
 module Make (Buffer : BUFFER) (Monad : MONAD with type buffer = Buffer.t) = struct
+  let invalid_arg fmt = Format.kasprintf invalid_arg fmt
+
   let fill_lexbuf buf len lexbuf =
     let open Lexing in
     let n = if len > 0 then len else ( lexbuf.lex_eof_reached <- true ; 0 ) in
@@ -56,7 +58,7 @@ module Make (Buffer : BUFFER) (Monad : MONAD with type buffer = Buffer.t) = stru
            then Bytes.blit lexbuf.lex_buffer lexbuf.lex_start_pos lexbuf.lex_buffer 0 (lexbuf.lex_buffer_len - lexbuf.lex_start_pos)
            else ( let new_len = min (max (2 * Bytes.length lexbuf.lex_buffer) n) Sys.max_string_length in
                   if lexbuf.lex_buffer_len - lexbuf.lex_start_pos + n > new_len
-                  then ( Fmt.failwith "Lexing.fill_lexbuf: cannot grow buffer" )
+                  then ( failwith "Lexing.fill_lexbuf: cannot grow buffer" )
                 ; let new_buf = Bytes.create new_len in
                   Bytes.blit lexbuf.lex_buffer lexbuf.lex_start_pos new_buf 0 (lexbuf.lex_buffer_len - lexbuf.lex_start_pos)
                 ; lexbuf.lex_buffer <- new_buf )

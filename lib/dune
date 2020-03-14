@@ -2,7 +2,7 @@
  (name unstrctrd)
  (public_name unstrctrd)
  (modules unstrctrd pp lexer)
- (libraries fmt uutf))
+ (libraries uutf))
 
 (library
  (name unstrctrd_parser)

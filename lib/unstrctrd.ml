@@ -13,7 +13,8 @@ type t = elt list
 
 type error = [ `Msg of string ]
 
-let error_msgf fmt = Fmt.kstrf (fun err -> Error (`Msg err)) fmt
+let invalid_arg fmt = Format.kasprintf invalid_arg fmt
+let error_msgf fmt = Format.kasprintf (fun err -> Error (`Msg err)) fmt
 
 let empty = []
 let length = List.length
@@ -114,11 +115,11 @@ let wsp ~len = `WSP (String.make len ' ')
 let tab ~len = `WSP (String.make len '\t')
 
 let fws ?(tab = false) indent =
-  if indent <= 0 then Fmt.invalid_arg "fws: invalid indent argument" ;
+  if indent <= 0 then invalid_arg "fws: invalid indent argument" ;
   if tab then `FWS (String.make indent '\t') else `FWS (String.make indent ' ')
 
 let split_at ~index l =
-  if index < 0 || index > List.length l then Fmt.invalid_arg "split_at: index (%d) is invalid" index ;
+  if index < 0 || index > List.length l then invalid_arg "split_at: index (%d) is invalid" index ;
 
   let rec go n l r = match n with
     | 0 -> List.rev l, r
