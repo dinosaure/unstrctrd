@@ -115,7 +115,7 @@ let without_comments lst =
       if stack > 0 then go stack false acc r else go stack false (value :: acc) r in
   go 0 false [] lst
 
-let replace_invalid_bytes f t =
+let replace_invalid_bytes ~f t =
   List.fold_left (fun a -> function
       | `Invalid_char chr ->
         ( match f chr with
