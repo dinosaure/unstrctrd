@@ -148,7 +148,8 @@ rule obs_unstruct acc = parse
 (* / FWS *)
 
   | fws as fws { obs_unstruct (`FWS fws :: acc) lexbuf }
-  | _ { Monad.fail "Non-terminating unstructured form" }
+  | _ as chr { obs_unstruct (`Invalid_char chr :: acc) lexbuf }
+  | eof { Monad.fail "Non-terminating unstructured form" }
 
 and unstructured acc = parse
   | crlf eof { Monad.return (List.rev acc) }
@@ -165,6 +166,8 @@ and unstructured acc = parse
   | cr { obs_unstruct (`OBS_UTEXT (0, 1, "") :: acc) lexbuf }
   | lf { obs_unstruct (`OBS_UTEXT (1, 0, "") :: acc) lexbuf }
   | obs_utext+ as obs_utext { obs_unstruct (`OBS_UTEXT (0, 0, obs_utext) :: acc) lexbuf }
+  | _ as chr { unstructured (`Invalid_char chr :: acc) lexbuf }
+  | eof { Monad.fail "Non-terminating unstrctured form" }
 
 {
 end

@@ -23,9 +23,11 @@ type elt =
   | `CR
   | `FWS of wsp
   | `d0
-  | `OBS_NO_WS_CTL of obs ]
+  | `OBS_NO_WS_CTL of obs
+  | `Invalid_char of invalid_char ]
 and wsp = private string
 and obs = private char
+and invalid_char = private char
 
 type t = private elt list
 
@@ -37,6 +39,9 @@ val length : t -> int
 val of_string : string -> (int * t, [> error ]) result
 (** [of_string raw] tries to parse [raw] and extract the {i unstructured} form. [raw] should, at least,
     terminate by CRLF. *)
+
+val safely_decode : string -> int * t
+val replace_invalid_bytes : (invalid_char -> elt option) -> t -> t
 
 val of_list : elt list -> (t, [> error ]) result
 (** [of_list lst] tries to coerce [lst] to {!t}. It verifies that [lst] can not produce CRLF terminating token (eg. [[`CR; `LF]]). *)
@@ -100,9 +105,9 @@ sig
   val make : unit -> Lexing.lexbuf
 
   val unstructured :
-    ([ `FWS of string | `OBS_UTEXT of int * int * string | `VCHAR of string | `WSP of string ] as 'a) list ->
+    ([ `FWS of string | `OBS_UTEXT of int * int * string | `VCHAR of string | `WSP of string | `Invalid_char of char ] as 'a) list ->
     Lexing.lexbuf -> 'a list Monad.t
 end
 
 val lexbuf_make : unit -> Lexing.lexbuf
-val post_process : (t -> 'a) -> [ `FWS of string | `OBS_UTEXT of int * int * string | `VCHAR of string | `WSP of string ] list -> 'a
+val post_process : (t -> 'a) -> [ `FWS of string | `OBS_UTEXT of int * int * string | `VCHAR of string | `WSP of string | `Invalid_char of char ] list -> 'a

@@ -5,9 +5,11 @@ type elt =
   | `CR
   | `FWS of wsp
   | `d0
-  | `OBS_NO_WS_CTL of obs ]
+  | `OBS_NO_WS_CTL of obs
+  | `Invalid_char of invalid_char ]
 and wsp = string
 and obs = char
+and invalid_char = char
 
 type t = elt list
 
@@ -58,11 +60,17 @@ let of_string str =
       let len = min (String.length str - !pos) (Bytes.length buffer) in
       Bytes.blit_string str !pos buffer 0 len ; pos := !pos + len ;
       go (continue len) in
-  go (Lexer.unstructured [] lexbuf)
+  try go (Lexer.unstructured [] lexbuf)
+  with _exn -> Error (`Msg "Unterminated input")
+
+let safely_decode str = match of_string (str ^ "\r\n") with
+  | Ok v -> v
+  | Error (`Msg err) -> invalid_arg "%s" err (* XXX(dinosaure): should never occur! *)
 
 let to_utf_8_string lst =
   let buf = Buffer.create (List.length lst) in
   let iter = function
+    | `Invalid_char chr -> invalid_arg "Invalid byte: %02x" (Char.code chr)
     | `d0 -> Buffer.add_char buf '\000'
     | `WSP wsp -> Buffer.add_string buf wsp
     | `OBS_NO_WS_CTL chr -> Buffer.add_char buf chr
@@ -106,6 +114,15 @@ let without_comments lst =
     | value :: r ->
       if stack > 0 then go stack false acc r else go stack false (value :: acc) r in
   go 0 false [] lst
+
+let replace_invalid_bytes f t =
+  List.fold_left (fun a -> function
+      | `Invalid_char chr ->
+        ( match f chr with
+          | Some v -> v :: a
+          | None -> a )
+      | v -> v :: a) [] t
+  |> List.rev
 
 let iter ~f l = List.iter f l
 let fold ~f a l = List.fold_left f a l
