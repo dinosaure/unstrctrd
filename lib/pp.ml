@@ -36,8 +36,8 @@ let is_obs_no_ws_ctl = function
 let pp_obs_utext k (`OBS_UTEXT (lf0, cr0, obs_utext)) =
   let lf0 = List.init lf0 (fun _ -> `LF) in
   let cr0 = List.init cr0 (fun _ -> `CR) in
-  let folder acc _ = function
-    | `Malformed err -> failwith err
+  let folder acc i = function
+    | `Malformed _ -> `Invalid_char obs_utext.[i] :: acc
     | `Uchar uchar -> match Uchar.to_int uchar with
       | 0 -> `d0 :: acc
       | 0x0D -> `CR :: acc
@@ -49,8 +49,8 @@ let pp_obs_utext k (`OBS_UTEXT (lf0, cr0, obs_utext)) =
   let res = Uutf.String.fold_utf_8 folder (cr0 @ lf0) obs_utext in k (List.rev res)
 
 let pp_vchar k (`VCHAR vchar) =
-  let folder acc _ = function
-    | `Malformed err -> failwith err
+  let folder acc i = function
+    | `Malformed _ -> `Invalid_char vchar.[i] :: acc
     | `Uchar _ as uchar -> uchar :: acc in
   let res = Uutf.String.fold_utf_8 folder [] vchar in k (List.rev res)
 
@@ -58,6 +58,7 @@ type obs_utext = [ `OBS_UTEXT of (int * int * string) ]
 type fws = [ `FWS of string ]
 type vchar = [ `VCHAR of string ]
 type wsp = [ `WSP of string ]
+type invalid_char = [ `Invalid_char of char ]
 
 let pp k lst =
   let rec go acc = function
@@ -65,6 +66,7 @@ let pp k lst =
     | x :: r ->
       let k lst = go (lst :: acc) r in
       match x with
+      | #invalid_char as v -> k [ v ]
       | #obs_utext as v -> pp_obs_utext k v
       | #fws as v -> pp_fws k v
       | #vchar as v -> pp_vchar k v

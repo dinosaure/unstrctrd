@@ -68,6 +68,12 @@ let complex (input, expect) =
     >>| Unstrctrd.to_utf_8_string in
   Alcotest.(check (result str errored)) "expect" res (Ok expect)
 
+let invalid_unstructured_string input =
+  Alcotest.test_case (Fmt.strf "%S" input) `Quick @@ fun () ->
+  match Unstrctrd.of_string input with
+  | Ok _ -> Alcotest.fail "Should not be a valid unstructured form"
+  | Error _ -> Alcotest.(check pass) "invalid input" () ()
+
 let () =
   Alcotest.run "unstrctrd"
     [ "valid", [ valid_unstructured_string "Hello\r\n" "Hello"
@@ -101,4 +107,8 @@ let () =
     ; "split_on", [ split_on "\r\n" `FWS None
                   ; split_on "Hello\r\n" `FWS None
                   ; split_on "Hello\r\n World!\r\n" `FWS (Some ("Hello", "World!"))
-                  ; split_on "Hello World!\r\n" `WSP (Some ("Hello", "World!")) ] ]
+                  ; split_on "Hello World!\r\n" `WSP (Some ("Hello", "World!")) ]
+    ; "invalid", [ invalid_unstructured_string "Hello"
+                 ; invalid_unstructured_string "Hello\r"
+                 ; invalid_unstructured_string "Hello\n"
+                 ; invalid_unstructured_string "Hello\r\n " ] ]
