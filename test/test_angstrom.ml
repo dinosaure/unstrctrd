@@ -146,7 +146,7 @@ let valid_unstructured_string input (field_name', v') =
   Alcotest.test_case (Fmt.strf "%S" input) `Quick @@ fun () ->
   let res =
     let open Rresult in
-    ( R.reword_error R.msg <.> Angstrom.parse_string parser) input in
+    ( R.reword_error R.msg <.> Angstrom.parse_string ~consume:Angstrom.Consume.Prefix parser) input in
   match res with
   | Ok (field_name, v) ->
     Alcotest.(check string) "field-name" field_name field_name' ;
@@ -157,7 +157,7 @@ let valid_unstructured_strings input lst' =
   Alcotest.test_case (Fmt.strf "%S" input) `Quick @@ fun () ->
   let res =
     let open Rresult in
-    ( R.reword_error R.msg <.> Angstrom.(parse_string (many parser)) ) input in
+    ( R.reword_error R.msg <.> Angstrom.(parse_string ~consume:Angstrom.Consume.Prefix (many parser)) ) input in
   match res with
   | Ok lst ->
     List.iter2
