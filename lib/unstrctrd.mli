@@ -63,7 +63,7 @@ val replace_invalid_bytes : f:(invalid_char -> elt option) -> t -> t
 val of_list : elt list -> (t, [> error ]) result
 (** [of_list lst] tries to coerce [lst] to {!t}. It verifies that [lst] can not produce CRLF terminating token (eg. [[`CR; `LF]]). *)
 
-val to_utf_8_string : t -> string
+val to_utf_8_string : ?rep:Uchar.t -> t -> string
 (** [to_utf_8_string t] returns a valid UTF-8 string of [t]. The given [t] must not contain [`Invalid_char], you probably
     should clean-up with {!replace_invalid_bytes}. *)
 

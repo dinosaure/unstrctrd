@@ -67,10 +67,10 @@ let safely_decode str = match of_string (str ^ "\r\n") with
   | Ok v -> v
   | Error (`Msg err) -> invalid_arg "%s" err (* XXX(dinosaure): should never occur! *)
 
-let to_utf_8_string lst =
+let to_utf_8_string ?(rep= Uutf.u_rep) lst =
   let buf = Buffer.create (List.length lst) in
   let iter = function
-    | `Invalid_char chr -> invalid_arg "Invalid byte: %02x" (Char.code chr)
+    | `Invalid_char _chr -> Uutf.Buffer.add_utf_8 buf rep
     | `d0 -> Buffer.add_char buf '\000'
     | `WSP wsp -> Buffer.add_string buf wsp
     | `OBS_NO_WS_CTL chr -> Buffer.add_char buf chr
