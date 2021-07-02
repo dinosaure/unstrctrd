@@ -81,39 +81,53 @@ let to_utf_8_string ?(rep= Uutf.u_rep) lst =
     | `CR -> Buffer.add_char buf '\r' in
   List.iter iter lst ; Buffer.contents buf
 
+type state = Comment of int | Quoted | Clear
+
 let without_comments lst =
-  let rec go stack escaped acc = function
-    | [] -> if stack = 0 then Ok (List.rev acc) else error_msgf "Non-terminating comment"
+  let rec go escaped state acc = function
+    | [] -> (match state with
+            | Clear -> if escaped then error_msgf "String finished with a single \\." else Ok (List.rev acc)
+            | Comment _ -> error_msgf "Non-terminating comment"
+            | Quoted -> error_msgf "Non-terminating quote")
     | `Uchar uchar as value :: r ->
-      ( match Uchar.to_int uchar with
-        | 0x28 (* '(' *) ->
-          if not escaped
-          then go (succ stack) false acc r
-          else
-            ( if stack > 0
-              then go stack false acc r
-              else go stack false (value :: acc) r )
-        | 0x29 (* ')' *) ->
-          if not escaped
-          then go (pred stack) false acc r
-          else
-            ( if stack > 0
-              then go stack false acc r
-              else go stack false (value :: acc) r )
-        | 0x5c (* '\' *) ->
-          if not escaped
-          then go stack true acc r
-          else
-            ( if stack > 0
-              then go stack false acc r
-              else go stack false (value :: acc) r )
-        | _ ->
-          if stack > 0
-          then go stack false acc r
-          else go stack false (value :: acc) r )
+       if escaped then
+         match state with
+         | Comment _ -> go false state acc r
+         | _ -> go false state (value :: acc) r
+       else
+         (match Uchar.to_int uchar with
+          | 0x28 (* '(' *) ->
+             (match state with
+              | Comment stack -> go false (Comment (succ stack)) acc r
+              | Quoted -> go false Quoted (value :: acc) r
+              | Clear -> go false (Comment 1) acc r)
+          | 0x29 (* ')' *) ->
+             (match state with
+              | Comment stack ->
+                 (if stack <= 0 (* should never happen *)
+                 then error_msgf "Close parenthesis outside a quoted string or a comment."
+                 else if stack = 1
+                 then go false Clear acc r
+                 else go false (Comment (pred stack)) acc r)
+              | Quoted -> go false Quoted (value :: acc) r
+              | Clear -> error_msgf "Close parenthesis outside a quoted string or a comment.")
+          | 0x5c (* '\' *) -> go true state acc r
+          | 0x22 (* '"' *) ->
+             (match state with
+              | Comment _ -> go false state acc r
+              | Quoted -> go false Clear (value :: acc) r
+              | Clear -> go false Quoted (value :: acc) r
+             )
+          | _ ->
+             (match state with
+              | Comment _ -> go false state acc r
+              | _ -> go false state (value :: acc) r))
     | value :: r ->
-      if stack > 0 then go stack false acc r else go stack false (value :: acc) r in
-  go 0 false [] lst
+       (match state with
+        | Comment _ -> go false state acc r
+        | _ -> go false state (value :: acc) r)
+  in
+  go false Clear [] lst
 
 let replace_invalid_bytes ~f t =
   List.fold_left (fun a -> function
