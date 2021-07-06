@@ -111,4 +111,9 @@ let () =
     ; "invalid", [ invalid_unstructured_string "Hello"
                  ; invalid_unstructured_string "Hello\r"
                  ; invalid_unstructured_string "Hello\n"
-                 ; invalid_unstructured_string "Hello\r\n " ] ]
+                 ; invalid_unstructured_string "Hello\r\n " ]
+    ; "quoted-string", [ valid_unstructured_string_without_comment "Hello \"World\"!\r\n" "Hello \"World\"!"
+                       ; valid_unstructured_string_without_comment "token=\":)\"\r\n" "token=\":)\""
+                       ; valid_unstructured_string_without_comment "(\")\")Hello\r\n" "Hello"
+                       ; valid_unstructured_string_without_comment "(\"(\")Hello\r\n" "Hello" ]
+    ]
