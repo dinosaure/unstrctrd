@@ -1,28 +1,26 @@
 opam-version: "2.0"
-name:         "unstrctrd"
-maintainer:   "Romain Calascibetta <romain.calascibetta@gmail.com>"
-authors:      "Romain Calascibetta <romain.calascibetta@gmail.com>"
-homepage:     "https://github.com/dinosaure/unstrctrd"
-bug-reports:  "https://github.com/dinosaure/unstrctrd/issues"
-dev-repo:     "git+https://github.com/dinosaure/unstrctrd.git"
-doc:          "https://dinosaure.github.io/unstrctrd/"
-license:      "MIT"
-synopsis:     "Unstructured parser"
-description: """Fast and compliant Unstructured parser according RFC 822
-"""
-
-build: [ "dune" "build" "-p" name "-j" jobs ]
-run-test: [ "dune" "runtest" "-p" name "-j" jobs ]
-
+name: "unstrctrd"
+synopsis: "Unstructured parser"
+description: "Fast and compliant Unstructured parser according RFC 822"
+maintainer: "Romain Calascibetta <romain.calascibetta@gmail.com>"
+authors: "Romain Calascibetta <romain.calascibetta@gmail.com>"
+license: "MIT"
+homepage: "https://github.com/dinosaure/unstrctrd"
+doc: "https://dinosaure.github.io/unstrctrd/"
+bug-reports: "https://github.com/dinosaure/unstrctrd/issues"
 depends: [
-  "ocaml"       {>= "4.07.0"}
-  "dune"        {>= "1.10"}
+  "ocaml" {>= "4.07.0"}
+  "dune" {>= "1.10"}
   "uutf"
-  "angstrom"    {>= "0.14.0"}
-  "rresult"     {with-test}
-  "alcotest"    {with-test}
-  "ke"          {with-test}
+  "angstrom" {>= "0.14.0"}
+  "rresult" {with-test}
+  "alcotest" {with-test}
+  "ke" {with-test}
   "bigstringaf" {with-test}
-  "hxd"         {with-test}
-  "fmt"         {with-test}
+  "hxd" {with-test & >= "0.3.1"}
+  "fmt" {with-test}
+  "crowbar" {>= "0.2" & with-test}
 ]
+build: ["dune" "build" "-p" name "-j" jobs]
+run-test: ["dune" "runtest" "-p" name "-j" jobs]
+dev-repo: "git+https://github.com/dinosaure/unstrctrd.git"
