@@ -4,4 +4,5 @@
 
 (rule
  (alias runtest)
- (action (run ./fuzz.exe)))
+ (action
+  (run ./fuzz.exe)))
