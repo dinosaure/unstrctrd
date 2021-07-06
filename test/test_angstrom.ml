@@ -61,7 +61,7 @@ let valid_mail_flow (input, length) expect =
           let _ = Q.N.push_exn q ~blit:blit_from_string ~length:String.length ~off:0 ~len:(String.length x) x in
           let off = 0 and len = Q.length q in
           let[@warning "-8"] [ x ] = Q.N.peek q in
-          Fmt.epr ">>> @[<hov>%a@].\n%!" (Hxd_string.pp Hxd.O.default) (Bigstringaf.to_string x) ;
+          Fmt.epr ">>> @[<hov>%a@].\n%!" (Hxd_string.pp Hxd.default) (Bigstringaf.to_string x) ;
           go r acc (continue raw ~off ~len Angstrom.Unbuffered.Incomplete) )
     | s -> go input acc s
 
