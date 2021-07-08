@@ -92,22 +92,21 @@ let without_comments lst =
           | true, _,  _ -> go stack ~escaped:false ~quoted_string acc r
           | false, _, 0 -> go stack ~escaped ~quoted_string:(not quoted_string) (value :: acc) r
           | false, false, _ -> go stack ~escaped ~quoted_string acc r
-          | false, true,  _ -> failwith "Should never happen")
+          | false, true,  _ -> assert false (* should never happen *))
         | 0x28 (* '(' *) ->
           ( match escaped, quoted_string, stack with
           | true,  _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
           | true,  _,  _ -> go stack ~escaped:false ~quoted_string acc r
           | false, true , 0 -> go 0 ~escaped ~quoted_string (value :: acc) r
           | false, false, n -> go (succ n) ~escaped ~quoted_string acc r
-          | false, true,  _ -> failwith "Should never happen")
+          | false, true,  _ -> assert false (* should never happen *))
         | 0x29 (* ')' *) ->
           ( match escaped, quoted_string, stack with
           | true,  _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
           | true,  _,  _ -> go stack ~escaped:false ~quoted_string acc r
           | false, true,  0 -> go 0 ~escaped ~quoted_string (value :: acc) r
           | false, false, n -> go (pred n) ~escaped ~quoted_string acc r
-          | false, true,  _ -> failwith "Should never happen"
-          )
+          | false, true,  _ -> assert false (* should never happen *))
         | 0x5c (* '\' *) ->
           ( match escaped, quoted_string, stack with
           | true,  _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
