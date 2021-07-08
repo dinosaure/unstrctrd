@@ -82,38 +82,45 @@ let to_utf_8_string ?(rep= Uutf.u_rep) lst =
   List.iter iter lst ; Buffer.contents buf
 
 let without_comments lst =
-  let rec go stack escaped acc = function
+  let rec go stack ~escaped ~quoted_string acc = function
     | [] -> if stack = 0 then Ok (List.rev acc) else error_msgf "Non-terminating comment"
     | `Uchar uchar as value :: r ->
       ( match Uchar.to_int uchar with
+        | 0x22 (* '"' *) ->
+          ( match escaped, quoted_string, stack with
+          | true, _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
+          | true, _,  _ -> go stack ~escaped:false ~quoted_string acc r
+          | false, _, 0 -> go stack ~escaped ~quoted_string:(not quoted_string) (value :: acc) r
+          | false, false, _ -> go stack ~escaped ~quoted_string acc r
+          | false, true,  _ -> assert false (* should never happen *))
         | 0x28 (* '(' *) ->
-          if not escaped
-          then go (succ stack) false acc r
-          else
-            ( if stack > 0
-              then go stack false acc r
-              else go stack false (value :: acc) r )
+          ( match escaped, quoted_string, stack with
+          | true,  _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
+          | true,  _,  _ -> go stack ~escaped:false ~quoted_string acc r
+          | false, true , 0 -> go 0 ~escaped ~quoted_string (value :: acc) r
+          | false, false, n -> go (succ n) ~escaped ~quoted_string acc r
+          | false, true,  _ -> assert false (* should never happen *))
         | 0x29 (* ')' *) ->
-          if not escaped
-          then go (pred stack) false acc r
-          else
-            ( if stack > 0
-              then go stack false acc r
-              else go stack false (value :: acc) r )
+          ( match escaped, quoted_string, stack with
+          | true,  _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
+          | true,  _,  _ -> go stack ~escaped:false ~quoted_string acc r
+          | false, true,  0 -> go 0 ~escaped ~quoted_string (value :: acc) r
+          | false, false, n -> go (pred n) ~escaped ~quoted_string acc r
+          | false, true,  _ -> assert false (* should never happen *))
         | 0x5c (* '\' *) ->
-          if not escaped
-          then go stack true acc r
-          else
-            ( if stack > 0
-              then go stack false acc r
-              else go stack false (value :: acc) r )
+          ( match escaped, quoted_string, stack with
+          | true,  _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
+          | true,  _,  _ -> go stack ~escaped:false ~quoted_string acc r
+          | false, _,  _ -> go stack ~escaped:true ~quoted_string acc r )
         | _ ->
           if stack > 0
-          then go stack false acc r
-          else go stack false (value :: acc) r )
+          then go stack ~escaped:false ~quoted_string acc r
+          else go stack ~escaped:false ~quoted_string (value :: acc) r )
     | value :: r ->
-      if stack > 0 then go stack false acc r else go stack false (value :: acc) r in
-  go 0 false [] lst
+      if stack > 0
+      then go stack ~escaped:false ~quoted_string acc r
+      else go stack ~escaped:false ~quoted_string (value :: acc) r in
+  go 0 ~escaped:false ~quoted_string:false [] lst
 
 let replace_invalid_bytes ~f t =
   List.fold_left (fun a -> function
