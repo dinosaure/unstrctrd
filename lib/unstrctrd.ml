@@ -88,45 +88,36 @@ let without_comments lst =
       ( match Uchar.to_int uchar with
         | 0x22 (* '"' *) ->
           ( match escaped, quoted_string, stack with
-          | true,  true,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
-          | true,  false, 0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
-          | false, true,  0 -> go stack ~escaped ~quoted_string:false (value :: acc) r
-          | false, false, 0 -> go stack ~escaped:false ~quoted_string:true (value :: acc) r
-          | true,  true,  _ -> go stack ~escaped:false ~quoted_string acc r
-          | true,  false, _ -> go stack ~escaped:false ~quoted_string acc r
-          | false, true,  _ -> go stack ~escaped ~quoted_string:false acc r
-          | false, false, _ -> go stack ~escaped ~quoted_string:true  acc r )
+          | true, _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
+          | true, _,  _ -> go stack ~escaped:false ~quoted_string acc r
+          | false, _, 0 -> go stack ~escaped ~quoted_string:(not quoted_string) (value :: acc) r
+          | false, false, _ -> go stack ~escaped ~quoted_string acc r
+          | false, true,  _ -> assert false (* should never happen *))
         | 0x28 (* '(' *) ->
           ( match escaped, quoted_string, stack with
-          | true,  true,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
-          | true,  false, 0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
-          | true,  true,  _ -> go stack ~escaped:false ~quoted_string acc r
-          | true,  false, _ -> go stack ~escaped:false ~quoted_string acc r
+          | true,  _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
+          | true,  _,  _ -> go stack ~escaped:false ~quoted_string acc r
           | false, true , 0 -> go 0 ~escaped ~quoted_string (value :: acc) r
-          | false, true,  _ -> go stack ~escaped ~quoted_string acc r
-          | false, false, n -> go (succ n) ~escaped ~quoted_string acc r )
+          | false, false, n -> go (succ n) ~escaped ~quoted_string acc r
+          | false, true,  _ -> assert false (* should never happen *))
         | 0x29 (* ')' *) ->
           ( match escaped, quoted_string, stack with
-          | true,  true,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
-          | true,  false, 0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
-          | true,  true,  _ -> go stack ~escaped:false ~quoted_string acc r
-          | true,  false, _ -> go stack ~escaped:false ~quoted_string acc r
+          | true,  _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
+          | true,  _,  _ -> go stack ~escaped:false ~quoted_string acc r
           | false, true,  0 -> go 0 ~escaped ~quoted_string (value :: acc) r
-          | false, true,  _ -> go stack ~escaped ~quoted_string acc r
-          | false, false, n -> go (pred n) ~escaped ~quoted_string acc r )
+          | false, false, n -> go (pred n) ~escaped ~quoted_string acc r
+          | false, true,  _ -> assert false (* should never happen *))
         | 0x5c (* '\' *) ->
           ( match escaped, quoted_string, stack with
-          | true,  true,  _ -> go stack ~escaped:false ~quoted_string (value :: acc) r
-          | true,  false, _ -> go stack ~escaped:false ~quoted_string (value :: acc) r
-          | false, true,  0 -> go 0 ~escaped:true ~quoted_string acc r
-          | false, false, 0 -> go 0 ~escaped:true ~quoted_string acc r
-          | false, _,     _ -> go stack ~escaped:true  ~quoted_string acc r )
+          | true,  _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
+          | true,  _,  _ -> go stack ~escaped:false ~quoted_string acc r
+          | false, _,  _ -> go stack ~escaped:true ~quoted_string acc r )
         | _ ->
           if stack > 0
           then go stack ~escaped:false ~quoted_string acc r
           else go stack ~escaped:false ~quoted_string (value :: acc) r )
     | value :: r ->
-      if stack > 0 
+      if stack > 0
       then go stack ~escaped:false ~quoted_string acc r
       else go stack ~escaped:false ~quoted_string (value :: acc) r in
   go 0 ~escaped:false ~quoted_string:false [] lst
