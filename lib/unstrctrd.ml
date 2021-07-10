@@ -81,6 +81,20 @@ let to_utf_8_string ?(rep= Uutf.u_rep) lst =
     | `CR -> Buffer.add_char buf '\r' in
   List.iter iter lst ; Buffer.contents buf
 
+(* XXX(dinosaure): According to RFC 5322,
+  
+   Strings of characters enclosed in parentheses are considered comments
+   so long as they do not appear within a "quoted-string", as defined in
+   section 3.2.4. Comments may nest.
+  
+   Semantically, neither the optional CFWS outside of the quote
+   characters nor the quote characters themselves are part of the
+   quoted-string; the quoted-string is what is contained between the two
+   quote characters.  As stated earlier, the "\" in any quoted-pair and
+   the CRLF in any FWS/CFWS that appears within the quoted-string are
+   semantically "invisible" and therefore not part of the quoted-string
+   either. *)
+
 let without_comments lst =
   let rec go stack ~escaped ~quoted_string acc = function
     | [] -> if stack = 0 then Ok (List.rev acc) else error_msgf "Non-terminating comment"
