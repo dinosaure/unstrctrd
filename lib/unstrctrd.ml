@@ -90,7 +90,7 @@ let to_utf_8_string ?(rep= Uutf.u_rep) lst =
    Semantically, neither the optional CFWS outside of the quote
    characters nor the quote characters themselves are part of the
    quoted-string; the quoted-string is what is contained between the two
-   quote characters.  As stated earlier, the "\" in any quoted-pair and
+   quote characters.  As stated earlier, the "\\" in any quoted-pair and
    the CRLF in any FWS/CFWS that appears within the quoted-string are
    semantically "invisible" and therefore not part of the quoted-string
    either. *)
