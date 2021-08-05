@@ -95,6 +95,8 @@ let to_utf_8_string ?(rep= Uutf.u_rep) lst =
    semantically "invisible" and therefore not part of the quoted-string
    either. *)
 
+let escape_uchar = Uchar.of_char '\\'
+
 let without_comments lst =
   let rec go stack ~escaped ~quoted_string acc = function
     | [] -> if stack = 0 then Ok (List.rev acc) else error_msgf "Non-terminating comment"
@@ -129,7 +131,7 @@ let without_comments lst =
         | _ ->
           if stack > 0
           then go stack ~escaped:false ~quoted_string acc r
-          else go stack ~escaped:false ~quoted_string (value :: acc) r )
+          else go stack ~escaped:false ~quoted_string (if escaped then value :: `Uchar escape_uchar :: acc else value :: acc) r )
     | value :: r ->
       if stack > 0
       then go stack ~escaped:false ~quoted_string acc r

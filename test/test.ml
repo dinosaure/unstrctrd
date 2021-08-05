@@ -117,4 +117,5 @@ let () =
                        ; valid_unstructured_string_without_comment "token=\":)\"\r\n" "token=\":)\""
                        ; valid_unstructured_string_without_comment "(\")Hello\r\n" "Hello"
                        ; valid_unstructured_string_without_comment "(\\\")Hello\r\n" "Hello"]
+    ; "escaping", [ valid_unstructured_string_without_comment "\\a\\b\\c\r\n" "\\a\\b\\c" ]
     ]
