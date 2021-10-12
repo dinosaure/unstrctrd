@@ -6,7 +6,7 @@ let rest_of_input ~committed ~len buffer input =
   String.concat "" (head :: input)
 
 let valid_unstructured_flow input expect =
-  Alcotest.test_case (Fmt.strf "[%a]" Fmt.(list ~sep:(always "; ") (fmt "%S")) input) `Quick @@ fun () ->
+  Alcotest.test_case (Fmt.str "[%a]" Fmt.(list ~sep:(any "; ") (fmt "%S")) input) `Quick @@ fun () ->
   let buffer = Bigstringaf.create 0x1000 in
   let rec go len input = function
     | Angstrom.Unbuffered.Done (committed, v) ->
@@ -49,7 +49,7 @@ let blit_from_string src src_off dst dst_off len =
   Bigstringaf.blit_from_string src ~src_off dst ~dst_off ~len
 
 let valid_mail_flow (input, length) expect =
-  Alcotest.test_case (Fmt.strf "header") `Quick @@ fun () ->
+  Alcotest.test_case (Fmt.str "header") `Quick @@ fun () ->
   let raw = Bigstringaf.create (2 * length) in
   let q = Q.from raw in
 
@@ -99,7 +99,7 @@ let valid_mail_flow (input, length) expect =
   Alcotest.(check (list string)) "fields" fields expect 
 
 let invalid_unstructured_flow input =
-  Alcotest.test_case (Fmt.strf "[%a]" Fmt.(list ~sep:(always "; ") (fmt "%S")) input) `Quick @@ fun () ->
+  Alcotest.test_case (Fmt.str "[%a]" Fmt.(list ~sep:(any "; ") (fmt "%S")) input) `Quick @@ fun () ->
   let buffer = Bigstringaf.create 0x1000 in
   let rec go len input = function
     | Angstrom.Unbuffered.Done (committed, v) ->
@@ -143,7 +143,7 @@ let value =
   Alcotest.testable pp ( = )
 
 let valid_unstructured_string input (field_name', v') =
-  Alcotest.test_case (Fmt.strf "%S" input) `Quick @@ fun () ->
+  Alcotest.test_case (Fmt.str "%S" input) `Quick @@ fun () ->
   let res =
     let open Rresult in
     ( R.reword_error R.msg <.> Angstrom.parse_string ~consume:Angstrom.Consume.Prefix parser) input in
@@ -154,7 +154,7 @@ let valid_unstructured_string input (field_name', v') =
   | Error (`Msg err) -> Alcotest.failf "%s" err
 
 let valid_unstructured_strings input lst' =
-  Alcotest.test_case (Fmt.strf "%S" input) `Quick @@ fun () ->
+  Alcotest.test_case (Fmt.str "%S" input) `Quick @@ fun () ->
   let res =
     let open Rresult in
     ( R.reword_error R.msg <.> Angstrom.(parse_string ~consume:Angstrom.Consume.Prefix (many parser)) ) input in

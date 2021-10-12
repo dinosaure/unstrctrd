@@ -3,12 +3,12 @@ let str = Alcotest.testable (fun ppf -> Fmt.pf ppf "%S") String.equal
 let ( <.> ) f g = fun x -> f (g x)
 
 let valid_unstructured_string input expect =
-  Alcotest.test_case (Fmt.strf "%S" expect) `Quick @@ fun () ->
+  Alcotest.test_case (Fmt.str "%S" expect) `Quick @@ fun () ->
   let res = let open Rresult.R in Unstrctrd.of_string input >>| fun (_, t) -> Unstrctrd.to_utf_8_string t in
   Alcotest.(check (result str errored)) "expect" res (Ok expect)
 
 let valid_unstructured_string_without_comment input expect =
-  Alcotest.test_case (Fmt.strf "%S" expect) `Quick @@ fun () ->
+  Alcotest.test_case (Fmt.str "%S" expect) `Quick @@ fun () ->
   let res =
     let open Rresult.R in
     Unstrctrd.of_string input
@@ -17,7 +17,7 @@ let valid_unstructured_string_without_comment input expect =
   Alcotest.(check (result str errored)) "expect" res (Ok expect)
 
 let split_at input index (e0, e1) =
-  Alcotest.test_case (Fmt.strf "@[<1>(%S,@ %S)@]" e0 e1) `Quick @@ fun () ->
+  Alcotest.test_case (Fmt.str "@[<1>(%S,@ %S)@]" e0 e1) `Quick @@ fun () ->
   let res =
     let open Rresult.R in
     Unstrctrd.of_string input
@@ -26,7 +26,7 @@ let split_at input index (e0, e1) =
   Alcotest.(check (result (pair str str) errored)) "expect" res (Ok (e0, e1))
 
 let split_on input v expect =
-  Alcotest.test_case (Fmt.strf "%S" input) `Quick @@ fun () ->
+  Alcotest.test_case (Fmt.str "%S" input) `Quick @@ fun () ->
   let res =
     let open Rresult.R in
     Unstrctrd.of_string input
@@ -58,7 +58,7 @@ let complex_2 =
 |}, "Date: Thu, 13 Feb 1969 23:32 -0330 "
 
 let complex (input, expect) =
-  Alcotest.test_case (Fmt.strf "%S" expect) `Quick @@ fun () ->
+  Alcotest.test_case (Fmt.str "%S" expect) `Quick @@ fun () ->
   let fws = function `FWS _ -> Unstrctrd.wsp ~len:1 | x -> x in
   let res =
     let open Rresult.R in
@@ -69,7 +69,7 @@ let complex (input, expect) =
   Alcotest.(check (result str errored)) "expect" res (Ok expect)
 
 let invalid_unstructured_string input =
-  Alcotest.test_case (Fmt.strf "%S" input) `Quick @@ fun () ->
+  Alcotest.test_case (Fmt.str "%S" input) `Quick @@ fun () ->
   match Unstrctrd.of_string input with
   | Ok _ -> Alcotest.fail "Should not be a valid unstructured form"
   | Error _ -> Alcotest.(check pass) "invalid input" () ()
