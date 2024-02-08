@@ -36,25 +36,25 @@ let split_on input v expect =
   Alcotest.(check (result (option (pair str str)) errored)) "expect" res (Ok expect)
 
 let complex_0 =
-{|To:A Group(Some people)
-     :Chris Jones <c@(Chris's host.)public.example>,
-         joe@example.org,
-  John <jdoe@one.test> (my dear friend); (the end of the group)
+{|To:A Group(Some people)|}^"\r"^{|
+     :Chris Jones <c@(Chris's host.)public.example>,|}^"\r"^{|
+         joe@example.org,|}^"\r"^{|
+  John <jdoe@one.test> (my dear friend); (the end of the group)|}^"\r"^{|
 |}, "To:A Group :Chris Jones <c@public.example>, joe@example.org, John <jdoe@one.test> ; "
 
 let complex_1 =
-{|To    : Mary Smith
-  
-          <mary@example.net>
+{|To    : Mary Smith|}^"\r"^{|
+  |}^"\r"^{|
+          <mary@example.net>|}^"\r"^{|
 |}, "To    : Mary Smith  <mary@example.net>"
 
 let complex_2 =
-{|Date: Thu,
-      13
-        Feb
-          1969
-      23:32
-               -0330 (Newfoundland Time)
+{|Date: Thu,|}^"\r"^{|
+      13|}^"\r"^{|
+        Feb|}^"\r"^{|
+          1969|}^"\r"^{|
+      23:32|}^"\r"^{|
+               -0330 (Newfoundland Time)|}^"\r"^{|
 |}, "Date: Thu, 13 Feb 1969 23:32 -0330 "
 
 let complex (input, expect) =

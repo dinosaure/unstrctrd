@@ -168,9 +168,9 @@ let valid_unstructured_strings input lst' =
   | Error (`Msg err) -> Alcotest.failf "%s" err
 
 let input0 =
-{|From: John Doe <jdoe@machine.example>
-To: Mary Smith <mary@example.net>
-
+{|From: John Doe <jdoe@machine.example>|}^"\r"^{|
+To: Mary Smith <mary@example.net>|}^"\r"^{|
+|}^"\r"^{|
 |}
 
 let input1 =
