@@ -1,3 +1,7 @@
+### v0.4 2024-04-04 (France)
+
+- Update tests to be compatible with OCaml 5.2 (@kit-ty-kate, #17)
+
 ### v0.3 2021-10-14 (France)
 
 - Be resilient about invalid byte and replace them by

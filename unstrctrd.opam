@@ -1,7 +1,9 @@
 opam-version: "2.0"
 name: "unstrctrd"
-synopsis: "Unstructured parser"
-description: "Fast and compliant Unstructured parser according RFC 822"
+synopsis: "Fast and compliant Unstructured parser according RFC 822"
+description: """Unstrctrd is a library for managing values formatted according to \
+the unstructured rule introduced by RFC 822. This format can be found in emails, \
+HTTP/1.1 and also in the description of Debian packages."""
 maintainer: "Romain Calascibetta <romain.calascibetta@gmail.com>"
 authors: "Romain Calascibetta <romain.calascibetta@gmail.com>"
 license: "MIT"
