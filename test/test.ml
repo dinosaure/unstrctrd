@@ -116,6 +116,8 @@ let () =
     ; "quoted-string", [ valid_unstructured_string_without_comment "Hello \"World\"!\r\n" "Hello \"World\"!"
                        ; valid_unstructured_string_without_comment "token=\":)\"\r\n" "token=\":)\""
                        ; valid_unstructured_string_without_comment "(\")Hello\r\n" "Hello"
-                       ; valid_unstructured_string_without_comment "(\\\")Hello\r\n" "Hello"]
+                       ; valid_unstructured_string_without_comment "(\\\")Hello\r\n" "Hello"
+                       ; valid_unstructured_string_without_comment "\"\\\"a@b.c\\\"\" <a@b.c>\r\n" "\"\\\"a@b.c\\\"\" <a@b.c>"
+                       ; valid_unstructured_string_without_comment "\"a\\\\b \\(c\\)\"\r\n" "\"a\\\\b \\(c\\)\"" ]
     ; "escaping", [ valid_unstructured_string_without_comment "\\a\\b\\c\r\n" "\\a\\b\\c" ]
     ]
