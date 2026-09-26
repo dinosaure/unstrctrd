@@ -93,9 +93,16 @@ let to_utf_8_string ?(rep= Uutf.u_rep) lst =
    quote characters.  As stated earlier, the "\\" in any quoted-pair and
    the CRLF in any FWS/CFWS that appears within the quoted-string are
    semantically "invisible" and therefore not part of the quoted-string
-   either. *)
+   either.
+
+   XXX(dinosaure): we also would like to **not** process quoted pair when they
+   appear inside a quoted-string (like ["\""]) at top (outside comments) because
+   something else (like [emile]) can process them. *)
 
 let escape_uchar = Uchar.of_char '\\'
+
+let escaped_value ~quoted_string value acc =
+  if quoted_string then value :: `Uchar escape_uchar :: acc else value :: acc
 
 let without_comments lst =
   let rec go stack ~escaped ~quoted_string acc = function
@@ -104,28 +111,28 @@ let without_comments lst =
       ( match Uchar.to_int uchar with
         | 0x22 (* '"' *) ->
           ( match escaped, quoted_string, stack with
-          | true, _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
+          | true, _,  0 -> go stack ~escaped:false ~quoted_string (escaped_value ~quoted_string value acc) r
           | true, _,  _ -> go stack ~escaped:false ~quoted_string acc r
           | false, _, 0 -> go stack ~escaped ~quoted_string:(not quoted_string) (value :: acc) r
           | false, false, _ -> go stack ~escaped ~quoted_string acc r
           | false, true,  _ -> assert false (* should never happen *))
         | 0x28 (* '(' *) ->
           ( match escaped, quoted_string, stack with
-          | true,  _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
+          | true,  _,  0 -> go stack ~escaped:false ~quoted_string (escaped_value ~quoted_string value acc) r
           | true,  _,  _ -> go stack ~escaped:false ~quoted_string acc r
           | false, true , 0 -> go 0 ~escaped ~quoted_string (value :: acc) r
           | false, false, n -> go (succ n) ~escaped ~quoted_string acc r
           | false, true,  _ -> assert false (* should never happen *))
         | 0x29 (* ')' *) ->
           ( match escaped, quoted_string, stack with
-          | true,  _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
+          | true,  _,  0 -> go stack ~escaped:false ~quoted_string (escaped_value ~quoted_string value acc) r
           | true,  _,  _ -> go stack ~escaped:false ~quoted_string acc r
           | false, true,  0 -> go 0 ~escaped ~quoted_string (value :: acc) r
           | false, false, n -> go (pred n) ~escaped ~quoted_string acc r
           | false, true,  _ -> assert false (* should never happen *))
         | 0x5c (* '\' *) ->
           ( match escaped, quoted_string, stack with
-          | true,  _,  0 -> go stack ~escaped:false ~quoted_string (value :: acc) r
+          | true,  _,  0 -> go stack ~escaped:false ~quoted_string (escaped_value ~quoted_string value acc) r
           | true,  _,  _ -> go stack ~escaped:false ~quoted_string acc r
           | false, _,  _ -> go stack ~escaped:true ~quoted_string acc r )
         | _ ->
