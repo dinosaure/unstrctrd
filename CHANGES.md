@@ -1,3 +1,7 @@
+### v0.5 2026-09-26 (France)
+
+- Keep quoted-pair when they are inside a quoted-string (@dinosaure, #19)
+
 ### v0.4 2024-04-04 (France)
 
 - Update tests to be compatible with OCaml 5.2 (@kit-ty-kate, #17)
